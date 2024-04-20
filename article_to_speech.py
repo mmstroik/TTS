@@ -21,10 +21,9 @@ def get_article_text(url):
     if not body_markup:
         raise ValueError("The specified class 'body markup' was not found in the HTML.")
 
-    text_elements = body_markup.find_all(
+    text = " ".join(element.get_text() for element in body_markup.find_all(
         ["p", "h1", "h2", "h3", "h4", "h5", "h6", "li"]
-    )
-    text = " ".join(element.get_text() for element in text_elements)
+    ))
     return text
 
 
@@ -32,15 +31,19 @@ def split_text(text, limit=4096):
     words = text.split()
     current_length = 0
     chunk = []
+
     for word in words:
-        current_length += len(word) + 1  # Include space in length calculation
-        if current_length > limit:
+        word_length = len(word) + 1  # Include space in length calculation
+        if current_length + word_length > limit:
             yield " ".join(chunk)
             chunk = [word]
-            current_length = len(word) + 1
+            current_length = word_length
         else:
             chunk.append(word)
-    yield " ".join(chunk)
+            current_length += word_length
+
+    if chunk:  # Ensure the last chunk is not missed
+        yield " ".join(chunk)
 
 
 def call_api_and_save_audio(chunks):
